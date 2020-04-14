@@ -4,6 +4,7 @@ from imutils import paths
 import cv2
 import argparse
 import re
+import numpy as np
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -13,19 +14,6 @@ ap.add_argument("-o", "--output", type=str, required=True,
 	help="path to the output image")
 args = vars(ap.parse_args())
 
-# #Take picture from folder like: Hill1 & Hill2, scene1 & scene2, my1 & my2, taj1 & taj2, lotus1 & lotus2, beach1 & beach2, room1 & room2
-
-# print("Enter the number of images you want to concantenate:")
-# no_of_images = int(input())
-# print("Enter the image name in order of left to right in way of concantenation:")
-# #like taj1.jpg, taj2.jpg, taj3.jpg .... tajn.jpg
-# filename = []
-
-# for i in range(no_of_images):
-#     print("Enter the %d image:" %(i+1))
-#     filename.append(input())
-
-# grab the paths to the input images and initialize our images list
 print("[INFO] loading images...")
 imagePaths = list(paths.list_images(args["images"]))
 images = []
@@ -45,19 +33,35 @@ imagePaths = sorted_nicely(imagePaths)
 
 # loop over the image paths, load each one, and add them to our
 # images to stitch list
-for imagePath in imagePaths:
+for imagePath in imagePaths[:333]:
     image = cv2.imread(imagePath)
     images.append(image)
 
-no_of_images = len(imagePaths)
+no_of_images = len(imagePaths[:333])
 print(no_of_images)
+
+#trim image
+def trim_image(result_image):
+    #crop top
+    if not np.sum(result_image[0]):
+        return trim_image(result_image[1:])
+    #crop bottom
+    elif not np.sum(result_image[-1]):
+        return trim_image(result_image[:-2])
+    #crop left
+    elif not np.sum(result_image[:,0]):
+        return trim_image(result_image[:,1:]) 
+    #crop right
+    elif not np.sum(result_image[:,-1]):
+        return trim_image(result_image[:,:-2])    
+    return result_image
 # print(images)
 
 
 # for i in range(no_of_images):
 #     images.append(cv2.imread(filename[i]))
 
-# #We need to modify the image resolution and keep our aspect ratio use the function imutils
+# #Resize the images if needed.
 
 # for i in range(no_of_images):
 #     images[i] = imutils.resize(images[i], width=400)
@@ -73,6 +77,8 @@ else:
     (result, matched_points) = panaroma.image_stitch([images[no_of_images-2], images[no_of_images-1]], match_status=True)
     for i in range(no_of_images - 2):
         (result, matched_points) = panaroma.image_stitch([images[no_of_images-i-3], result], match_status=True)
+        #trim the result image
+        result = trim_image(result)
 
 #to show the got panaroma image and valid matched points
 # for i in range(no_of_images):
@@ -82,8 +88,8 @@ else:
 # cv2.imshow("Panorama", result)
 
 #to write the images
-cv2.imwrite("Matched_points.jpg", matched_points)
+cv2.imwrite("Matched_"+args["output"], matched_points)
 cv2.imwrite(args["output"], result)
 
 # cv2.waitKey(0)
-cv2.destroyAllWindows()
+# cv2.destroyAllWindows()
