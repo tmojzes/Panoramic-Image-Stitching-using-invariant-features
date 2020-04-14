@@ -28,6 +28,9 @@ class Panaroma:
 
             return (result_image, vis)
 
+        #trim result image
+        result_image = trim_image(result_image)
+
         return result_image
 
     def getwarp_perspective(self,imageA,imageB,Homography):
@@ -115,3 +118,18 @@ class Panaroma:
                 cv2.line(vis, ptA, ptB, (0, 255, 0), 1)
 
         return vis
+
+    def trim_image(self, result_image):
+        #crop top
+        if not np.sum(result_image[0]):
+            return trim(result_image[1:])
+        #crop bottom
+        elif not np.sum(result_image[-1]):
+            return trim(result_image[:-2])
+        #crop left
+        elif not np.sum(result_image[:,0]):
+            return trim(result_image[:,1:]) 
+        #crop right
+        elif not np.sum(result_image[:,-1]):
+            return trim(result_image[:,:-2])    
+        return result_image
